@@ -1,8 +1,10 @@
 from django.http import HttpResponse, HttpResponseNotFound, Http404, HttpResponseRedirect, HttpResponsePermanentRedirect
-from django.shortcuts import render, redirect
+from django.shortcuts import get_object_or_404, render, redirect
 from django.urls import reverse
 from django.template.loader import render_to_string
 from django.template.defaultfilters import slugify
+
+from .models import Category, Women
 
 menu = [{'title': "О сайте", 'url_name': 'about'},
         {'title': "Добавить статью", 'url_name': 'add_page'},
@@ -24,10 +26,12 @@ cats_db = [
     {'id': 3, 'title': 'Продюсеры', 'slug': 'producers'},
 ]
 def index(request):
+    
+    post = Women.published.all()
     data = {
         'title': 'Главная страница',
         'menu': menu,
-        'posts': data_db,
+        'posts': post,
         "cat_selected": 0,
     }
     return render(request, 'women/index.html', context=data)
@@ -37,8 +41,30 @@ def about(request):
     return render(request, 'women/about.html', {'title': 'О сайте', 'menu': menu})
 
 
-def show_post(request, post_id):
-    return HttpResponse(f"Отображение статьи с id = {post_id}")
+def show_post(request, post_slug):
+    post = get_object_or_404(Women, slug=post_slug)
+    
+    data = {
+        'post': post,
+        'title': post.title,
+        'menu': menu,
+        'cat_selected': 1
+    }
+    return render(request, 'women/post.html', context=data)
+
+
+def show_category(request, category_slug):
+    category = get_object_or_404(Category, slug=category_slug)
+    post = Women.published.filter(cat_id=category.pk)
+
+    data = {
+        
+        'posts': post,
+        'title': f"Category {category.title}",
+        'menu': menu,
+        'cat_selected': category.pk
+    }
+    return render(request, 'women/category.html', context=data)
 
 
 def addpage(request):
